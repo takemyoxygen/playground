@@ -12,55 +12,60 @@ fn read_input() -> String {
     input
 }
 
-fn main() {
-    let mut encodings = HashMap::new();
-    encodings.insert('0', [" _ ",
+fn build_alphabet() -> HashMap<char, [&'static str; 3]>{
+    let mut alphabet = HashMap::with_capacity(10);
+    alphabet.insert('0', [" _ ",
                            "| |",
                            "|_|"]);
 
-    encodings.insert('1', [" ",
+    alphabet.insert('1', [" ",
                            "|",
                            "|"]);
 
-    encodings.insert('2', [" _ ",
+    alphabet.insert('2', [" _ ",
                            " _|",
                            "|_ "]);
 
-    encodings.insert('3', ["_ ",
+    alphabet.insert('3', ["_ ",
                            "_|",
                            "_|"]);
 
-    encodings.insert('4', ["   ",
+    alphabet.insert('4', ["   ",
                            "|_|",
                            "  |"]);
 
-    encodings.insert('5', [" _ ",
+    alphabet.insert('5', [" _ ",
                            "|_ ",
                            " _|"]);
 
-    encodings.insert('6', [" _ ",
+    alphabet.insert('6', [" _ ",
                            "|_ ",
                            "|_|"]);
 
-    encodings.insert('7', ["_ ",
+    alphabet.insert('7', ["_ ",
                            " |",
                            " |"]);
 
-    encodings.insert('8', [" _ ",
+    alphabet.insert('8', [" _ ",
                            "|_|",
                            "|_|"]);
 
-    encodings.insert('9', [" _ ",
+    alphabet.insert('9', [" _ ",
                            "|_|",
                            " _|"]);
 
+    alphabet
+}
+
+fn main() {
+    let alphabet = build_alphabet();
     let input = read_input();
     print!("You've entered: {}", input);
 
     let to_print: Vec<_> = input
         .trim()
         .chars()
-        .map(|c| match encodings.get(&c){
+        .map(|c| match alphabet.get(&c){
             Some(encoded) => encoded,
             None => panic!("Character {} is not known", &c)
         })
