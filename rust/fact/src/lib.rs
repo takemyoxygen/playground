@@ -14,6 +14,7 @@ mod tests {
         assert_eq!(6, fact(3));
     }
 
+    #[test]
     fn fact_6(){
         assert_eq!(720, fact(6));
     }

@@ -65,10 +65,7 @@ fn main() {
     let to_print: Vec<_> = input
         .trim()
         .chars()
-        .map(|c| match alphabet.get(&c){
-            Some(encoded) => encoded,
-            None => panic!("Character {} is not known", &c)
-        })
+        .map(|c| alphabet.get(&c).expect(&format!("Character {} is not known", &c)))
         .collect();
 
     for i in 0..3 {
