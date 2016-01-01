@@ -1,0 +1,12 @@
+[package]
+name = "city-pop"
+version = "0.1.0"
+authors = ["Uladzimir Makarau <uladzimir.makarau@gmail.com>"]
+
+[[bin]]
+name = "city-pop"
+
+[dependencies]
+csv = "0.*"
+rustc-serialize = "0.*"
+getopts = "0.*"
