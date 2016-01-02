@@ -1,3 +1,5 @@
+mod cells;
+
 use std::f32;
 use std::num;
 
@@ -28,6 +30,7 @@ pub fn find_root(x: i32) -> Option<i32> {
     }
 }
 
+// already exists as "and_then" function
 pub fn bind<T, K, F>(opt: Option<T>, f: F) -> Option<K> where F: FnOnce(T) -> Option<K> {
     match opt {
         Some(x) => f(x),
@@ -86,12 +89,9 @@ mod tests {
     #[test]
     fn error_equality_tests() {
         assert_eq!(Error::Input("foo".to_string()), Error::Input("foo".to_string()));
-        assert!(Error::Input("foo".to_string()) != Error::Input("foo".to_string()));
 
         let error1 = "foo".parse::<i32>().err().unwrap();
         let error2 = "foo".parse::<i32>().err().unwrap();
-        assert!(Error::Parsing(error1) != Error::Parsing(error2));
-
-        // TODO: test equality of Error::Parsing values
+        assert_eq!(Error::Parsing(error1), Error::Parsing(error2));
     }
 }
