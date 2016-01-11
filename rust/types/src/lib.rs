@@ -1,4 +1,5 @@
 mod cells;
+mod fun;
 
 use std::f32;
 use std::num;
@@ -54,6 +55,16 @@ pub fn parse_and_double(input: &str) -> Result<String, Error> {
         .map(|x| x.to_string())
 }
 
+trait Extractable<T> {
+    fn extract_value(self) -> T;
+}
+
+impl<T> Extractable<T> for Option<T> {
+    fn extract_value(self) -> T {
+        self.unwrap()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -93,5 +104,31 @@ mod tests {
         let error1 = "foo".parse::<i32>().err().unwrap();
         let error2 = "foo".parse::<i32>().err().unwrap();
         assert_eq!(Error::Parsing(error1), Error::Parsing(error2));
+    }
+
+    fn take_ownership<T>(x: T) {}
+
+    fn take_borrowed<T>(x: &T) {}
+
+    fn take_mutable<T>(x: &mut T) {}
+
+    #[test]
+    fn lambda_tests(){
+        let inc = |x: i32| x + 1;
+        assert_eq!(88, inc(87));
+
+        let mut outer = 32;
+        {
+            let mut try_take_ownership =  || {
+                take_ownership(outer);
+                take_borrowed(&outer);
+                take_mutable(&mut outer);
+                outer += 10;
+            };
+
+            try_take_ownership();
+        }
+
+        assert_eq!(42, outer);
     }
 }
