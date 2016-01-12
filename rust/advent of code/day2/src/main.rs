@@ -2,6 +2,7 @@ use std::io;
 use std::io::Read;
 use std::num::ParseIntError;
 use std::str::FromStr;
+use std::ops::Add;
 
 fn read_input() -> io::Result<String> {
     let mut buffer = String::new();
@@ -9,7 +10,7 @@ fn read_input() -> io::Result<String> {
     Ok(buffer.trim().to_string())
 }
 
-fn sum<'a, I: Iterator<Item=&'a u32>>(iter: I) -> u32 {
+fn sum<'a, T: Iterator<Item=&'a u32>>(iter: T) -> u32 {
     iter.fold(0, |acc, x| acc + x)
 }
 
