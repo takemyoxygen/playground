@@ -9,8 +9,8 @@ fn read_input() -> io::Result<String> {
     Ok(buffer.trim().to_string())
 }
 
-fn sum(v: &Vec<u32>) -> u32 {
-    v.iter().fold(0, |acc, current| acc + current)
+fn sum<'a, I: Iterator<Item=&'a u32>>(iter: I) -> u32 {
+    iter.fold(0, |acc, x| acc + x)
 }
 
 fn parse_line(line: &str) -> Result<(u32, u32, u32), ParseIntError> {
@@ -26,9 +26,9 @@ fn parse_line(line: &str) -> Result<(u32, u32, u32), ParseIntError> {
 }
 
 fn calculate_area(l: u32, w: u32, h: u32) -> u32 {
-    let areas = vec![l * w, h * w, l * h];
+    let areas = [l * w, h * w, l * h];
     let extra = areas.iter().min().unwrap();
-    let area = 2 * sum(&areas);
+    let area = 2 * sum(areas.iter());
     area + extra
 }
 
@@ -51,13 +51,13 @@ fn main() {
         .map(|&(l, w, h)| calculate_area(l, w, h))
         .collect();
 
-    let ribbons_length = gifts
+    let ribbons_length: Vec<_> = gifts
         .iter()
         .map(|&(l, w, h)| calculate_ribbon_length(l, w, h))
         .collect();
 
-    let total_area = sum(&areas);
-    let total_ribbon_length = sum(&ribbons_length);
+    let total_area = sum(areas.iter());
+    let total_ribbon_length = sum(ribbons_length.iter());
 
     println!("Total area: {}", total_area);
     println!("Total ribbon length: {}", total_ribbon_length);
