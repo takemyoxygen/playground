@@ -3,8 +3,8 @@ use std::io::Read;
 use std::str::FromStr;
 use std::collections::{HashMap, HashSet};
 
-type Person = String;
-type HappinessTable = HashMap<(Person, Person), i32>;
+type Person<'a> = &'a str;
+type HappinessTable<'a> = HashMap<(Person<'a>, Person<'a>), i32>;
 
 fn read_input() -> io::Result<String> {
     let mut buffer = String::new();
@@ -26,12 +26,12 @@ fn parse_input(input: &str) -> Vec<(&str, i32, &str)> {
         .collect()
 }
 
-fn add(name1: &str, name2: &str, happiness: i32, table: &mut HappinessTable){
-    let mut entry = table.entry((name1.to_string(), name2.to_string())).or_insert(0);
+fn add<'a>(name1: Person<'a>, name2: Person<'a>, happiness: i32, table: &mut HappinessTable<'a>){
+    let mut entry = table.entry((name1, name2)).or_insert(0);
     *entry += happiness;
 }
 
-fn build_happiness_table<'a>(rules: &'a Vec<(&str, i32, &str)>) -> HappinessTable {
+fn build_happiness_table<'a>(rules: &'a Vec<(Person<'a>, i32, Person<'a>)>) -> HappinessTable<'a> {
     let mut table = HappinessTable::new();
 
     for &(name, happiness, neighbour) in rules {
@@ -43,31 +43,30 @@ fn build_happiness_table<'a>(rules: &'a Vec<(&str, i32, &str)>) -> HappinessTabl
 }
 
 fn find_path(
-    start: &Person,
-    current: &Person,
+    start: Person,
+    current: Person,
     happiness_so_far: i32,
     happiness_table: &HappinessTable,
-    remaining: &HashSet<&Person>) -> i32 {
-    if remaining.len() == 1 {
-        happiness_so_far + happiness_table.get(&(start.clone(), current.clone())).unwrap()
+    remaining: &HashSet<Person>) -> i32 {
+    if remaining.len() == 1 { // remaining contains only "current"
+        happiness_so_far + happiness_table.get(&(start, current)).unwrap()
     } else {
         let mut remaining = remaining.clone();
         remaining.remove(current);
         remaining
             .iter()
             .map(|&next|{
-                let happiness_so_far = happiness_so_far + happiness_table.get(&(current.clone(), next.clone())).unwrap();
-                let c = remaining.clone();
-                find_path(start, next, happiness_so_far, happiness_table, &c)
+                let happiness_so_far = happiness_so_far + happiness_table.get(&(current, next)).unwrap();
+                find_path(start, next, happiness_so_far, happiness_table, &remaining)
             })
             .fold(i32::min_value(), std::cmp::max)
     }
 }
 
 fn max_happiness(happiness_table: &HappinessTable) -> i32 {
-    let guests: HashSet<_> = happiness_table.keys().map(|&(ref p, _)| p).collect();
+    let guests: HashSet<_> = happiness_table.keys().map(|&(p, _)| p).collect();
 
-    let start = guests.iter().next().unwrap().clone();
+    let start = guests.iter().next().unwrap();
 
     find_path(&start, &start, 0, happiness_table, &guests)
 }
