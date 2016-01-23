@@ -43,59 +43,39 @@ fn build_happiness_table<'a>(rules: &'a Vec<(&str, i32, &str)>) -> HappinessTabl
 }
 
 fn find_path(
-    person: &Person,
-    remaining: &HashSet<&Person>,
+    start: &Person,
+    current: &Person,
+    happiness_so_far: i32,
     happiness_table: &HappinessTable,
-    happiness_so_far: i32) -> (Person, i32) {
+    remaining: &HashSet<&Person>) -> i32 {
     if remaining.len() == 1 {
-        (person.clone(), happiness_so_far)
+        happiness_so_far + happiness_table.get(&(start.clone(), current.clone())).unwrap()
     } else {
         let mut remaining = remaining.clone();
-        remaining.remove(person);
+        remaining.remove(current);
         remaining
             .iter()
-            .map(|&next| {
-                let happiness_so_far = happiness_so_far + happiness_table.get(&(person.clone(), next.clone())).unwrap();
+            .map(|&next|{
+                let happiness_so_far = happiness_so_far + happiness_table.get(&(current.clone(), next.clone())).unwrap();
                 let c = remaining.clone();
-                find_path(next, &c, happiness_table, happiness_so_far)
+                find_path(start, next, happiness_so_far, happiness_table, &c)
             })
-            .fold(("n/a".to_string(), i32::min_value()), |(best_person, best_happiness), (person, happiness)|{
-                if best_happiness > happiness { (best_person, best_happiness) }
-                else { (person, happiness) }
-            })
+            .fold(i32::min_value(), std::cmp::max)
     }
 }
 
 fn max_happiness(happiness_table: &HappinessTable) -> i32 {
-    let mut persons = HashSet::new();
+    let guests: HashSet<_> = happiness_table.keys().map(|&(ref p, _)| p).collect();
 
-    for &(ref person, _) in happiness_table.keys() {
-        persons.insert(person);
-    }
+    let start = guests.iter().next().unwrap().clone();
 
-    let start = persons.iter().next().unwrap().clone();
-
-    persons.remove(start);
-
-    let (last, happiness) = persons
-        .iter()
-        .map(|&next| {
-            let happiness_so_far = happiness_table.get(&(start.clone(), next.clone())).unwrap();
-            let c = persons.clone();
-            find_path(&next, &c, happiness_table, *happiness_so_far)
-        })
-        .fold(("n/a".to_string(), i32::min_value()), |(best_person, best_happiness), (person, happiness)|{
-            if best_happiness > happiness { (best_person, best_happiness) }
-            else { (person, happiness) }
-        });
-
-    happiness + happiness_table.get(&(start.clone(), last)).unwrap()
+    find_path(&start, &start, 0, happiness_table, &guests)
 }
 
 fn add_myself(happiness_table: &mut HappinessTable) {
-    let persons: Vec<_> = happiness_table.keys().map(|&(ref p, _)| p).cloned().collect();
+    let guests: Vec<_> = happiness_table.keys().map(|&(ref p, _)| p).cloned().collect();
 
-    for person in persons {
+    for person in guests {
         add("me", &person, 0, happiness_table);
         add(&person, "me", 0, happiness_table);
     }
@@ -105,14 +85,7 @@ fn main() {
     let input = read_input().unwrap();
     let happiness_rules = parse_input(&input);
 
-    println!("Happiness Rules:");
-    for rule in &happiness_rules {
-        println!("{:?}", rule);
-    }
-
     let mut table = build_happiness_table(&happiness_rules);
-    println!("Happiness table: {:?}", table);
-    println!("Total rows in the table {}", table.len());
 
     let happiness = max_happiness(&table);
     println!("Max happiness: {}", happiness);
