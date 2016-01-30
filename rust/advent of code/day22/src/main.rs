@@ -27,7 +27,7 @@ struct Player {
     health: usize,
     armor: usize,
     mana: usize,
-    active_effects: Vec<Effect>
+    active_spells: Vec<Spell>
 }
 
 impl Alive for Player {
@@ -38,12 +38,12 @@ impl Alive for Player {
 
 impl Player {
     fn new() -> Player {
-        Player { health: 50, armor: 0, mana: 500, active_effects: Vec::new() }
+        Player { health: 50, armor: 0, mana: 500, active_spells: Vec::new() }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-enum Spell {
+enum SpellType {
     MagicMissile,
     Drain,
     Shield,
@@ -51,124 +51,124 @@ enum Spell {
     Recharge
 }
 
-#[derive(Clone)]
-struct Castable {
+#[derive(Clone, Debug)]
+struct Spell {
     mana: usize,
-    spell: Spell
+    spell_type: SpellType,
+    timer: usize
 }
 
-impl Castable {
+impl Spell {
 
-    fn all() -> Vec<Castable> {
+    fn all() -> Vec<Spell> {
         vec![
-            Castable { mana: 53, spell: Spell::MagicMissile },
-            Castable { mana: 73, spell: Spell::Drain },
-            Castable { mana: 113, spell: Spell::Shield },
-            Castable { mana: 173, spell: Spell::Poison },
-            Castable { mana: 229, spell: Spell::Recharge },
+            Spell { mana: 53, spell_type: SpellType::MagicMissile, timer: 1 },
+            Spell { mana: 73, spell_type: SpellType::Drain, timer: 1 },
+            Spell { mana: 113, spell_type: SpellType::Shield, timer: 6 },
+            Spell { mana: 173, spell_type: SpellType::Poison, timer: 6 },
+            Spell { mana: 229, spell_type: SpellType::Recharge, timer: 5 },
         ]
     }
-
 }
 
-#[derive(Debug, Clone)]
-struct Effect {
-    timer: usize,
-    spell: Spell
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum Difficulty {
+    Normal,
+    Hard
 }
 
 fn apply_effects(player: &mut Player, boss: &mut Boss) {
-    for effect in player.active_effects.iter_mut() {
-        effect.timer -=1;
+    for spell in player.active_spells.iter_mut() {
+        spell.timer -=1;
 
-        match effect.spell {
-            Spell::Shield => player.armor = 7,
-            Spell::Poison => boss.receive_damage(3),
-            Spell::Recharge => player.mana += 101,
-            _ => panic!("Spell {:?} cannot have effects", effect.spell)
+        match spell.spell_type {
+            SpellType::MagicMissile => boss.receive_damage(4),
+            SpellType::Drain => { player.health += 2; boss.receive_damage(2); }
+            SpellType::Shield => player.armor = 7,
+            SpellType::Poison => boss.receive_damage(3),
+            SpellType::Recharge => player.mana += 101,
         }
     }
 
-    // remove expired effects
-    for i in (0..player.active_effects.len()).rev() {
-        if player.active_effects[i].timer == 0 {
-            player.active_effects.remove(i);
+    for i in (0..player.active_spells.len()).rev() {
+        if player.active_spells[i].timer == 0 {
+            player.active_spells.remove(i);
         }
-    }
-}
-
-fn cast(player: &mut Player, boss: &mut Boss, castable: &Castable) {
-    player.mana -= castable.mana;
-    match castable.spell {
-        Spell::MagicMissile => boss.receive_damage(4),
-        Spell::Drain => { player.health += 2; boss.receive_damage(2); }
-        Spell::Shield => player.active_effects.push(Effect { timer: 6, spell: Spell::Shield }),
-        Spell::Poison => player.active_effects.push(Effect { timer: 6, spell: Spell::Poison }),
-        Spell::Recharge => player.active_effects.push(Effect { timer: 5, spell: Spell::Recharge })
     }
 }
 
 fn boss_turn(player: &mut Player, boss: &Boss) {
     let damage = if boss.damage > player.armor { boss.damage - player.armor } else { 1 };
-    // println!("Boss attacks for {} damage", damage);
     player.receive_damage(damage);
 }
 
-fn pick_available_castables(player: &Player, castables: &Vec<Castable>) -> Vec<Castable> {
-    castables
+fn pick_available_spells(player: &Player, spells: &Vec<Spell>) -> Vec<Spell> {
+    spells
         .iter()
-        .filter(|castable| player.mana >= castable.mana )
-        .filter(|castable| player.active_effects.iter().all(|effect| effect.spell != castable.spell))
+        .filter(|spell| player.mana >= spell.mana )
+        .filter(|spell| player.active_spells.iter().all(|s| s.spell_type != spell.spell_type))
         .cloned()
         .collect()
 }
 
-fn round(player: Player, boss: Boss, castables: &Vec<Castable>, mana_spent_so_far: usize, best_result_so_far: usize) -> usize {
-    if player.health <= 1 { best_result_so_far }
-    // else if boss.health == 0 { cmp::min(best_result_so_far, mana_spent_so_far) }
+fn round(
+    player: Player,
+    boss: Boss,
+    spells: &Vec<Spell>,
+    mana_spent_so_far: usize,
+    best_result_so_far: usize,
+    difficulty: Difficulty) -> usize {
+
+    if player.health == 0 { best_result_so_far }
     else {
         let mut player = player;
         let mut boss = boss;
         player.armor = 0;
-        player.receive_damage(1);
+
+        if difficulty == Difficulty::Hard {
+            player.receive_damage(1);
+            if player.health == 0 {
+                return best_result_so_far;
+            }
+        }
 
         apply_effects(&mut player, &mut boss);
 
         if boss.health == 0 { cmp::min(best_result_so_far, mana_spent_so_far) }
         else {
-            let available_castables = pick_available_castables(&mut player, castables);
+            pick_available_spells(&mut player, spells)
+                .iter()
+                .fold(best_result_so_far, |best_result, spell|{
+                    let mut player = player.clone();
+                    let mut boss = boss.clone();
 
-            let mut best_so_far = best_result_so_far;
+                    player.mana -= spell.mana;
+                    player.active_spells.push(spell.clone());
+                    let mana_spent_so_far = mana_spent_so_far + spell.mana;
 
-            for castable in available_castables {
-                let mut player = player.clone();
-                let mut boss = boss.clone();
-
-                cast(&mut player, &mut boss, &castable);
-                let mana_spent_so_far = mana_spent_so_far + castable.mana;
-                if best_so_far <= mana_spent_so_far { continue; }
-
-                player.armor = 0;
-                apply_effects(&mut player, &mut boss);
-                if boss.health > 0 {
-                    boss_turn(&mut player, &mut boss);
-                    best_so_far = round(player, boss, castables, mana_spent_so_far, best_so_far);
-                } else {
-                    best_so_far = mana_spent_so_far;
-                }
-            }
-
-            // println!("Best result so far: {}", best_so_far );
-            best_so_far
+                    if best_result <= mana_spent_so_far {
+                        best_result
+                    } else {
+                        player.armor = 0;
+                        apply_effects(&mut player, &mut boss);
+                        if boss.health > 0 {
+                            boss_turn(&mut player, &mut boss);
+                            round(player, boss, spells, mana_spent_so_far, best_result, difficulty)
+                        } else {
+                            mana_spent_so_far
+                        }
+                    }
+                })
         }
     }
 }
 
 fn main() {
-    let castables = Castable::all();
-    let player = Player::new();
-    let boss = Boss::new();
+    let spells = Spell::all();
 
-    let mana_spent = round(player, boss, &castables, 0, usize::max_value());
-    println!("Min amount of mana to win: {:?}", mana_spent);
+    let mana_spent = round(Player::new(), Boss::new(), &spells, 0, usize::max_value(), Difficulty::Normal);
+    println!("Part 1: min amount of mana to win: {:?}", mana_spent);
+
+    let mana_spent = round(Player::new(), Boss::new(), &spells, 0, usize::max_value(), Difficulty::Hard);
+    println!("Part 2: min amount of mana to win: {:?}", mana_spent);
 }
