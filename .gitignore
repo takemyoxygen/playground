@@ -1,3 +1,6 @@
 target
 data
 rust/advent of code/**/input*.txt
+paket.exe
+packages
+scripts/**/*.json
