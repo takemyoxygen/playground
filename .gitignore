@@ -4,3 +4,5 @@ rust/advent of code/**/input*.txt
 paket.exe
 packages
 scripts/**/*.json
+scripts/*.txt
+scripts/*.csv

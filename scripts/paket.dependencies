@@ -1,4 +1,5 @@
 source https://www.nuget.org/api/v2
+nuget FSharp.Control.Reactive
 nuget FSharp.Data
 nuget Newtonsoft.Json
 nuget FSharp.Charting
