@@ -6,3 +6,4 @@ packages
 scripts/**/*.json
 scripts/*.txt
 scripts/*.csv
+.idea
