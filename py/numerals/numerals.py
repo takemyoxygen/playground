@@ -53,3 +53,18 @@ def convert_arabic_to_roman(number):
     summands_in_roman = (summand_to_roman(digit, power) for (digit, power) in summands)
 
     return reduce(operator.concat, summands_in_roman)
+
+
+def convert_roman_to_arabic(number):
+
+    def summands(number):
+        for (index, digit) in enumerate(number):
+            summand = roman_to_arabic[digit]
+            yield summand \
+                if (index + 1) == len(number) or roman_to_arabic[number[index + 1]] <= summand \
+                else -summand
+
+    return reduce(operator.add, summands(number.upper()))
+
+
+print(convert_roman_to_arabic("MMMMCMXCIX"))
