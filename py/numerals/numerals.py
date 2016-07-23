@@ -65,6 +65,3 @@ def convert_roman_to_arabic(number):
                 else -summand
 
     return reduce(operator.add, summands(number.upper()))
-
-
-print(convert_roman_to_arabic("MMMMCMXCIX"))
