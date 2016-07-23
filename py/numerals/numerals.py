@@ -53,5 +53,3 @@ def convert_arabic_to_roman(number):
     summands_in_roman = (summand_to_roman(digit, power) for (digit, power) in summands)
 
     return reduce(operator.concat, summands_in_roman)
-
-print(convert_arabic_to_roman(123))

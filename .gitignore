@@ -11,3 +11,5 @@ bin
 obj
 .vs
 *.user
+.venv
+__pycache__
