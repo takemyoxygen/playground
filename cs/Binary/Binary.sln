@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Binary.Library", "Binary.Library\Binary.Library.csproj", "{D50BB3A7-9A75-4DCA-A08E-6A6449257E1D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Binary.Client", "Binary.Client\Binary.Client.csproj", "{BC97477B-4289-44A9-B20B-85DE00F6F895}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D50BB3A7-9A75-4DCA-A08E-6A6449257E1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D50BB3A7-9A75-4DCA-A08E-6A6449257E1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D50BB3A7-9A75-4DCA-A08E-6A6449257E1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D50BB3A7-9A75-4DCA-A08E-6A6449257E1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC97477B-4289-44A9-B20B-85DE00F6F895}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC97477B-4289-44A9-B20B-85DE00F6F895}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC97477B-4289-44A9-B20B-85DE00F6F895}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC97477B-4289-44A9-B20B-85DE00F6F895}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

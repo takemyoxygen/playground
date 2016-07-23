@@ -7,3 +7,7 @@ scripts/**/*.json
 scripts/*.txt
 scripts/*.csv
 .idea
+bin
+obj
+.vs
+*.user
