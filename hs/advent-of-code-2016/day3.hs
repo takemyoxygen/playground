@@ -1,5 +1,5 @@
 import System.IO (isEOF)
-import Data.List.Split (splitOn, chunksOf)
+import Data.List.Split (chunksOf)
 import Data.List (transpose)
 
 type Lengths = [[Int]]
