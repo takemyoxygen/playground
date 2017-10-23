@@ -18,3 +18,4 @@ hs/advent-of-code-2016/**/*
 hs/advent-of-code-2016/**/*.hi
 hs/advent-of-code-2016/**/*.o
 hs/advent-of-code-2016/**/*.txt
+*.exe
