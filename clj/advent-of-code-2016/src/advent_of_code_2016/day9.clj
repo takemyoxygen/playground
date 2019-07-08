@@ -1,5 +1,10 @@
 (ns advent-of-code-2016.day9)
 
+(defn read-n
+  "Reads first n symbols from given collection. Returns a pair - first n elements and the remaining ones"
+  [n coll]
+  [(take n coll) (drop n coll)])
+
 (defn read-until
   "Reads symbols from incoming string until it encounters a given stop-at symbol. Returns
   a pair - symbols read before stop-at symbol and remaining string (starting with stop-at symbol)"
@@ -17,35 +22,51 @@
         [repeat-times after-repeat-times] (read-until (next after-repeat-count) \))]
     [(Integer/parseInt repeat-length) (Integer/parseInt repeat-times) (next after-repeat-times)]))
 
+(defn calculate-simple-repeated-length
+  "Calculates the length of string which follows repetition marker without processing inner markers"
+  [repeat-length repeat-times _]
+  (* repeat-times repeat-length))
+
+(declare calculate-decompressed-size)
+
+(defn calculate-recursive-repeated-length
+  [_ repeat-times to-repeat]
+  (* repeat-times (calculate-decompressed-size to-repeat calculate-recursive-repeated-length)))
+
 (defn process-repeat
-  [input]
+  [input repetition-calc]
   (let [[repeat-length repeat-times rest] (read-repeat input)
-        repetition-length (* repeat-times repeat-length)
-        rest-after-repetition (drop repeat-length rest)]
+        [to-repeat rest-after-repetition] (read-n repeat-length rest)
+        repetition-length (repetition-calc repeat-length repeat-times to-repeat)]
     [repetition-length rest-after-repetition]))
 
 (defn sanitize
   "Prepares input (removes whitespaces) to be passed further to calculation functions"
   [input]
-  (clojure.string/replace input #"\s+" ""))
+  (-> input
+      (clojure.string/replace #"\s+" "")
+      (char-array)))
 
 (defn calculate-decompressed-size
   "Decompresses repeatitions encountered in the given input and returns decompressed input length"
-  [input]
-  (loop [current-length 0 [c & rest :as to-process] (char-array input)]
+  [input repetition-calc]
+  (loop [current-length 0 [c & rest :as to-process] input]
     (cond
       (nil? c) current-length
-      (= c \() (let [[repeated-length rest-after-repetition] (process-repeat to-process)]
+      (= c \() (let [[repeated-length rest-after-repetition] (process-repeat to-process repetition-calc)]
                  (recur (+ current-length repeated-length) rest-after-repetition))
       :else (recur (inc current-length) rest))))
 
 
 (defn solve
-  [input]
+  [input repetition-calc]
   (let [sanitized-input (sanitize input)]
-    (calculate-decompressed-size sanitized-input)))
+    (calculate-decompressed-size sanitized-input repetition-calc)))
 
 (defn solve-part1
   [input]
-  (let [length (solve input)]
-    (println "Converted length" length)))
+  (solve input calculate-simple-repeated-length))
+
+(defn solve-part2
+  [input]
+  (solve input calculate-recursive-repeated-length))
