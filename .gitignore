@@ -20,3 +20,16 @@ hs/advent-of-code-2016/**/*.o
 hs/advent-of-code-2016/**/*.txt
 *.exe
 node_modules
+
+clj/**/target
+clj/**/classes
+clj/checkouts
+clj/profiles.clj
+clj/pom.xml
+clj/pom.xml.asc
+*.jar
+*.class
+/.lein-*
+/.nrepl-port
+.lein-failures
+.nrepl-port
