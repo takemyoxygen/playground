@@ -1,6 +1,5 @@
 (ns advent-of-code-2016.day14
-  (:import java.security.MessageDigest
-           java.math.BigInteger))
+  (:require [advent-of-code-2016.common :as common]))
 
 (defn contains-repetitive-char
   [counts? target-count input]
@@ -18,13 +17,8 @@
   [symbol input]
   ((complement nil?) (contains-repetitive-char (partial = symbol) 5 input)))
 
-(defn md5 [s]
-  (let [algorithm (MessageDigest/getInstance "MD5")
-        raw (.digest algorithm (.getBytes s))]
-    (format "%032x" (BigInteger. 1 raw))))
-
 (defn md5-stretch [s]
-  (reduce (fn [input _] (md5 input)) s (range 2017)))
+  (reduce (fn [input _] (common/md5 input)) s (range 2017)))
 
 (defn hashes
   [input hashing-fn]
@@ -46,7 +40,7 @@
 
 (defn solve-part-1
   [salt]
-  (find-keys salt 64 md5))
+  (find-keys salt 64 common/md5))
 
 (defn solve-part-2
   [salt]
