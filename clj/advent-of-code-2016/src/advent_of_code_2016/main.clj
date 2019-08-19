@@ -8,7 +8,8 @@
             [advent-of-code-2016.day14 :as day14]
             [advent-of-code-2016.day15 :as day15]
             [advent-of-code-2016.day16 :as day16]
-            [advent-of-code-2016.day17 :as day17]))
+            [advent-of-code-2016.day17 :as day17]
+            [advent-of-code-2016.day18 :as day18]))
 
 (defn -main
   "I don't do a whole lot ... yet."
