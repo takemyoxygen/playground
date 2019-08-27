@@ -9,29 +9,27 @@
 
 (def max-ip 4294967295)
 
-(defn step
-  [[acc last-hi] [lo hi]]
-  (let [next-acc (if (> (- lo last-hi) 1) (cons [(inc last-hi) (dec lo)] acc) acc)]
-    [next-acc (max hi last-hi)]))
+(defn open-ranges-seq
+  [last-hi [[lo hi] & rest-blacklist]]
+  (cond
+    (nil? lo) (if (= last-hi max-ip) [] [[(inc last-hi) max-ip]])
+    (> (- lo last-hi) 1) (cons [(inc last-hi) (dec lo)] (lazy-seq (open-ranges-seq (max hi last-hi) rest-blacklist)))
+    :else (lazy-seq (open-ranges-seq (max hi last-hi) rest-blacklist))))
 
 (defn get-open-ranges
-  [initial-blacklist]
-  (let [[open-ranges last-hi] (reduce step [[] 0] (sort-by first initial-blacklist))
-        open-range-with-last (if (= last-hi max-ip) open-ranges (cons [(inc last-hi) max-ip] open-ranges))]
-    (reverse open-range-with-last)))
-
-(defn solve-part-1
   [input]
   (->> input
-      (parse-input)
-      (get-open-ranges)
-      (first)
-      (first)))
+       (parse-input)
+       (sort-by first)
+       (open-ranges-seq 0)))
+
+(def solve-part-1 (comp first first get-open-ranges))
+
+(defn size [[lo hi]] (inc (- hi lo)))
 
 (defn solve-part-2
   [input]
   (->> input
-       (parse-input)
        (get-open-ranges)
-       (map (fn [[lo hi]] (inc (- hi lo))))
+       (map size)
        (reduce +)))
