@@ -1,81 +1,195 @@
 (ns advent-of-code-2016.day21)
 
 (defn to-int [x] (Integer/parseInt x))
+(defn split-words [input] (clojure.string/split input #"\s+"))
 
-(defn swap-position
-  [x y input]
-  (let [input-vec (vec input)]
-    (map-indexed
-      (fn [idx it]
-        (case idx
-          x (input-vec y)
-          y (input-vec x)
-          it))
-      input)))
+;swap position X with position Y
+(def swap-position-op
+  {:op :swap-position
+   :extract-args
+       (fn [[swap position x _ _ y]]
+         (if (and (= swap "swap") (= position "position")) [(to-int x) (to-int y)]))
+   :execute
+      (fn [input x y]
+        (let [input-vec (vec input)]
+          (map-indexed
+            (fn [idx it]
+              (cond
+                (= x idx) (input-vec y)
+                (= y idx) (input-vec x)
+                :else it))
+            input)))
+   :reverse-args identity})
 
-(defn swap-letter
-  [x y input]
-  (map
-    (fn [i] (cond
-              (= i x) y
-              (= i y) x
-              :else i))
-    input))
+;swap letter X with letter Y
+(def swap-letter-op
+  {:op :swap-letter
+   :extract-args
+      (fn [[swap letter x _ _ y]]
+        (if (and (= swap "swap") (= letter "letter")) [(first x) (first y)]))
+   :execute
+      (fn [input x y]
+        (map
+          (fn [i] (cond
+                    (= i x) y
+                    (= i y) x
+                    :else i))
+          input))
+   :reverse-args identity})
 
-(defn rotate-dir
-  [direction steps input]
-  (let [normalized-steps (rem steps (count input))
-        pivot-point (case direction :left normalized-steps :right (- (count input) normalized-steps))
-        [left right] (split-at pivot-point input)]
-    (concat right left)))
+;rotate left/right X steps
+(def rotate-dir-op
+  {:op :rotate-dir-op
+   :extract-args
+      (fn [[rotate direction x]]
+        (if (and (= rotate "rotate") (or (= direction "left") (= direction "right")))
+            [(keyword direction) (to-int x)]))
+   :execute
+      (fn [input direction steps]
+        (let [normalized-steps (rem steps (count input))
+              pivot-point (case direction :left normalized-steps :right (- (count input) normalized-steps))
+              [left right] (split-at pivot-point input)]
+          (concat right left)))
+   :reverse-args
+      (fn [[direction x]]
+        (if (= direction :left) [:right x] [:left x]))})
 
-(defn rotate-based
-  [x input]
+;rotate based on position of letter X
+(def rotate-letter-op
+  {:op :rotate-letter-op
+   :extract-args
+      (fn [[rotate based _ _ _ _ x]]
+        (if (and (= rotate "rotate") (= based "based"))
+            [(first x)]))
+   :execute
+      (fn [input x]
+        (let [input-vec (vec input)
+              index (.indexOf input-vec x)
+              steps (+ (inc index) (if (>= index 4) 1 0))]
+          ((:execute rotate-dir-op) input :right steps)))
+   :reverse-args identity})
+
+(defn rotate-letter-rev
+  [input x]
   (let [input-vec (vec input)
         index (.indexOf input-vec x)
-        steps (+ (inc index) (if (>= index 4) 1 0))]
-    (rotate-dir :right steps input)))
+        prev-index (if (= (rem index 2) 1)
+                       (quot (dec index) 2)
+                       (quot (+ (count input-vec) index -2) 2))
+        steps (mod (- prev-index index) (count input-vec))]
+    (println "index" index)
+    (println "prev-index" prev-index)
+    (println "steps" steps)
+    ((:execute rotate-dir-op) input :right steps)))
 
-(defn reverse-pos
-  [x y input]
-  (let [[first interim] (split-at x input)
-        [middle last] (split-at (inc (- y x)) interim)]
-    (concat first (reverse middle) last)))
+;reverse positions X through Y
+(def reverse-pos-op
+  {:op :reverse-pos-op
+   :extract-args
+      (fn [[reverse _ x _ y]]
+        (if (= reverse "reverse") [(to-int x) (to-int y)]))
+   :execute
+      (fn [input x y]
+        (let [[first interim] (split-at x input)
+              [middle last] (split-at (inc (- y x)) interim)]
+          (concat first (reverse middle) last)))})
 
-(defn move-pos
-  [x y input]
-  (let [input-vec (vec input)
-        target (input-vec x)]
-    (loop [[x & rest] input acc [] idx 0]
-      )))
+;move position X to position Y
+(def move-position-op
+  {:op :move-position-op
+   :extract-args
+      (fn [[move _ x _ _ y]]
+        (if (= move "move")
+          [(to-int x) (to-int y)]))
+   :execute
+      (fn [input x y]
+        (let [input-vec (vec input)
+              target (input-vec x)]
+          (reverse (loop [[x & rest :as current-input] input acc [] idx 0]
+                     (cond
+                       (= idx (count input-vec)) acc
+                       (= y idx) (recur current-input (cons target acc) (inc idx))
+                       (= x target) (recur rest acc idx)
+                       :else (recur rest (cons x acc) (inc idx)))))))})
 
-;(defn parse-command
-;  [[type subtype & rest :as command]]
-;  (case [type subtype]
-;    ["swap" "position"] {:type :swap-position :x (to-int (command 2)) :y (to-int (command 5))}
-;    ["swap" "letter"] {:type :swap-letter :x  :y (to-int (command 5))}
-;    [type subtype]))
+(defn create-reverse-op
+  ([op] (create-reverse-op op identity (:execute op)))
+  ([op rev-args] (create-reverse-op op rev-args (:execute op)))
+  ([op rev-args rev-exec]
+    (assoc op
+      :op (keyword (str (name (:op op)) "-rev"))
+      :extract-args (comp rev-args (:extract-args op))
+      :execute rev-exec))
+  )
+
+(def all-ops
+  [swap-position-op
+   swap-letter-op
+   rotate-dir-op
+   rotate-letter-op
+   reverse-pos-op
+   move-position-op])
+
+(defn find-op-def
+  [op]
+  (->> all-ops
+       (map (fn [op-def] [((:extract-args op-def) op) op-def]))
+       (filter first)
+       (first)))
+
+(defn execute-op
+  [input op]
+  (if-let [[args op-def] (find-op-def op)]
+    (let [result (apply (:execute op-def) input args)]
+      (println "executing op" (:op op-def) "on input" (apply str input) "on args" args "result:" (apply str result))
+      result)))
+
+(defn execute-rev-op
+  [input op]
+  (if-let [[args op-def] (find-op-def op)]
+    (let [result (apply (:execute op-def) input ((:reverse-args op-def) args))]
+      (println "executing op" (:op op-def) "on input" (apply str input) "on args" args "result:" (apply str result))
+      result)))
 
 (defn parse-input
   [input]
   (->> input
        (clojure.string/split-lines)
-       (map #(clojure.string/split % #"\s+"))))
+       (map split-words)))
 
+(defn solve-part-1
+  [input]
+  (->> input
+       (parse-input)
+       (reduce execute-op "abcdefgh")
+       (apply str)))
 
 (def input "rotate right 3 steps\nswap position 7 with position 0\nrotate left 3 steps\nreverse positions 2 through 5\nmove position 6 to position 3\nreverse positions 0 through 4\nswap position 4 with position 2\nrotate based on position of letter d\nrotate right 0 steps\nmove position 7 to position 5\nswap position 4 with position 5\nswap position 3 with position 5\nmove position 5 to position 3\nswap letter e with letter f\nswap position 6 with position 3\nswap letter a with letter e\nreverse positions 0 through 1\nreverse positions 0 through 4\nswap letter c with letter e\nreverse positions 1 through 7\nrotate right 1 step\nreverse positions 6 through 7\nmove position 7 to position 1\nmove position 4 to position 0\nmove position 4 to position 6\nmove position 6 to position 3\nswap position 1 with position 6\nswap position 5 with position 7\nswap position 2 with position 5\nswap position 6 with position 5\nswap position 2 with position 4\nreverse positions 2 through 6\nreverse positions 3 through 5\nmove position 3 to position 5\nreverse positions 1 through 5\nrotate left 1 step\nmove position 4 to position 5\nswap letter c with letter b\nswap position 2 with position 1\nreverse positions 3 through 4\nswap position 3 with position 4\nreverse positions 5 through 7\nswap letter b with letter d\nreverse positions 3 through 4\nswap letter c with letter h\nrotate based on position of letter b\nrotate based on position of letter e\nrotate right 3 steps\nrotate right 7 steps\nrotate left 2 steps\nmove position 6 to position 1\nreverse positions 1 through 3\nrotate based on position of letter b\nreverse positions 0 through 4\nswap letter g with letter c\nmove position 1 to position 5\nrotate right 4 steps\nrotate left 2 steps\nmove position 7 to position 2\nrotate based on position of letter c\nmove position 6 to position 1\nswap letter f with letter g\nrotate right 6 steps\nswap position 6 with position 2\nreverse positions 2 through 6\nswap position 3 with position 1\nrotate based on position of letter h\nreverse positions 2 through 5\nmove position 1 to position 3\nrotate right 1 step\nrotate right 7 steps\nmove position 6 to position 3\nrotate based on position of letter h\nswap letter d with letter h\nrotate left 0 steps\nmove position 1 to position 2\nswap letter a with letter g\nswap letter a with letter g\nswap position 4 with position 2\nrotate right 1 step\nrotate based on position of letter b\nswap position 7 with position 1\nrotate based on position of letter e\nmove position 1 to position 4\nmove position 6 to position 3\nrotate left 3 steps\nswap letter f with letter g\nswap position 3 with position 1\nswap position 4 with position 3\nswap letter f with letter c\nrotate left 3 steps\nrotate left 0 steps\nrotate right 3 steps\nswap letter d with letter e\nswap position 2 with position 7\nmove position 3 to position 6\nswap position 7 with position 1\nswap position 3 with position 6\nrotate left 5 steps\nswap position 2 with position 6")
+;
+;(def sample-input
+;  ["swap position 4 with position 0"
+;   "swap letter d with letter b"
+;   "reverse positions 0 through 4"
+;   "rotate left 1 step"
+;   "move position 1 to position 4"
+;   "move position 3 to position 0"
+;   "rotate based on position of letter b"
+;   "rotate based on position of letter d"])
+;
+;
+;(reduce execute-op "abcde" (map split-words sample-input))
+;
+;(println "Result: "
+;         (->> input
+;              (parse-input)
+;              (reduce execute-op "abcdefgh")))
 
-(->> input
-     (parse-input)
-     (filter)
-     (println))
 
-;(println (swap-position 4 0 "abcde"))
-;(println (swap-letter \d \b "ebcda"))
-;(println (rotate-dir :left 1 "abcd"))
-;(println (rotate-dir :right 1 "abcd"))
 
-;(println (rotate-based \b "abdec"))
-;(println (rotate-based \d "ecabd"))
+(execute-op "ecabd" (split-words "rotate based on position of letter d"))
 
-(println (reverse-pos 1 4 "abcdef"))
+(execute-rev-op "decab" (split-words "rotate based on position of letter d"))
+
+(execute-op "abcdefgh" (split-words "move position 3 to position 0"))
+
+(rotate-letter-rev "cdefghab" \e)
