@@ -1,22 +1,5 @@
-(ns advent-of-code-2016.day12)
-
-(defn parse-operand
-  [operand]
-  (if (nil? operand)
-    nil
-    (try
-      {:type :constant :value (Integer/parseInt operand)}
-      (catch NumberFormatException _
-        {:type :register :name operand}))))
-
-(defn parse-line
-  [input-line]
-  (let [[operation operand1 operand2] (clojure.string/split input-line #"\s")]
-    {:name operation :operands (remove nil? [(parse-operand operand1) (parse-operand operand2)])}))
-
-(defn parse-input
-  [input]
-  (map parse-line (clojure.string/split-lines input)))
+(ns advent-of-code-2016.day12
+  (:require [advent-of-code-2016.monorail :as monorail]))
 
 (defn initial-state
   [operations]
@@ -85,13 +68,13 @@
 
 (defn solve-part-1
   [input]
-  (let [instructions (parse-input input)
+  (let [instructions (monorail/parse-instructions input)
         state (initial-state instructions)]
     (execute-operations state)))
 
 (defn solve-part-2
   [input]
-  (let [instructions (parse-input input)
+  (let [instructions (monorail/parse-instructions input)
         state (->> (initial-state instructions)
                    (set-register {:name "c"} 1))]
     (execute-operations state)))
