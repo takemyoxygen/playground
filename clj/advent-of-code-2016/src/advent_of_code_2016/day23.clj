@@ -35,14 +35,14 @@
 
 (defn perform-tgl
   [{[operand] :operands} {:keys [instructions] :as state}]
-(let [instruction-index (+ (:next state) (resolve-value operand state))
-      new-instructions (if
-                         (contains? instructions instruction-index)
-                         (update instructions instruction-index toggle-instruction)
-                         instructions)]
-  (-> state
-      (assoc :instructions new-instructions)
-      (move-next))))
+  (let [instruction-index (+ (:next state) (resolve-value operand state))
+        new-instructions (if
+                           (contains? instructions instruction-index)
+                           (update instructions instruction-index toggle-instruction)
+                           instructions)]
+    (-> state
+        (assoc :instructions new-instructions)
+        (move-next))))
 
 (defn perform-cpy
   [{[op1 op2] :operands} state]
@@ -71,6 +71,13 @@
          move-next)
     (move-next state)))
 
+(defn perform-mult
+  [{[op1 op2] :operands} state]
+  (let [result (* (resolve-value op1 state) (resolve-value op2 state))]
+    (->> state
+         (set-register op1 result)
+         (move-next))))
+
 (defn perform-jnz
   [{[op steps] :operands} state]
   (let [steps-value (resolve-value steps state)
@@ -87,6 +94,7 @@
     "dec" (perform-dec operation state)
     "jnz" (perform-jnz operation state)
     "tgl" (perform-tgl operation state)
+    "mult" (perform-mult operation state)
     (throw (Exception. (str "Unknown operation" operation)))))
 
 (defn execute-instructions
@@ -96,22 +104,26 @@
       (recur (perform-operation (instructions next) current-state))
       current-state)))
 
-;(def sample-input "cpy 2 a\ntgl a\ntgl a\ntgl a\ncpy 1 a\ndec a\ndec a")
-;(def sample-initial-state (get-initial-state (monorail/parse-instructions sample-input)))
 
-(def input "cpy a b\ndec b\ncpy a d\ncpy 0 a\ncpy b c\ninc a\ndec c\njnz c -2\ndec d\njnz d -5\ndec b\ncpy b c\ncpy c d\ndec d\ninc c\njnz d -2\ntgl c\ncpy -16 c\njnz 1 c\ncpy 73 c\njnz 82 d\ninc a\ninc d\njnz d -2\ninc c\njnz c -5")
-(def initial-state (get-initial-state (monorail/parse-instructions input)))
+; several instructions in the original input are replaced with new "mult" instruction followed
+; by setting a few registers to 0 and then jumping to the end of the multiplication (to keep the total number of instructions)
+; the same as in the original input
+(def input "cpy a b\ndec b\nmult a b\ncpy 0 c\ncpy 0 d\njnz 1 5\ndec c\njnz c -2\ndec d\njnz d -5\ndec b\ncpy b c\ncpy c d\ndec d\ninc c\njnz d -2\ntgl c\ncpy -16 c\njnz 1 c\ncpy 73 c\njnz 82 d\ninc a\ninc d\njnz d -2\ninc c\njnz c -5")
 
-
-(->> initial-state
+; Part 1
+(->> input
+     (monorail/parse-instructions)
+     (get-initial-state)
      (set-register {:name "a"} 7)
-     (execute-instructions))
+     (execute-instructions)
+     (:registers)
+     (println "Part 1"))
 
-
-(->> initial-state
+; Part 2
+(->> input
+     (monorail/parse-instructions)
+     (get-initial-state)
      (set-register {:name "a"} 12)
-     (execute-instructions))
-
-
-;(execute-instructions sample-initial-state)
-;(perform-tgl (get-in sample-initial-state [:instructions 1]) (move-next (set-register {:name "a"} 2 sample-initial-state)))
+     (execute-instructions)
+     (:registers)
+     (println "Part 2"))
