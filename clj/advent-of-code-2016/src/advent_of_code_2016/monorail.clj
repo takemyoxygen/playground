@@ -29,7 +29,7 @@
 
 (defn get-empty-state
   [instructions]
-  {:next 0 :instructions (vec instructions) :registers {}})
+  {:next 0 :instructions (vec instructions) :registers {} :output []})
 
 (defn resolve-value
   [operand state]
@@ -113,6 +113,18 @@
       (move-next state)
       (update state :next (partial + steps-value)))))
 
+(defn perform-add
+  [{[op1 op2] :operands} state]
+  (->> state
+       (update-register op1 (partial + (resolve-value op2 state)))
+       move-next))
+
+(defn perform-out
+  [{[op] :operands} state]
+  (-> state
+      (update :output (fn [output] (conj output (resolve-value op state))))
+      (move-next)))
+
 (defn perform-operation
   [operation state]
   (case (:name operation)
@@ -122,11 +134,16 @@
     "jnz" (perform-jnz operation state)
     "tgl" (perform-tgl operation state)
     "mult" (perform-mult operation state)
+    "out" (perform-out operation state)
+    "add" (perform-add operation state)
     (throw (Exception. (str "Unknown operation" operation)))))
 
 (defn execute-instructions
-  [state]
-  (loop [{:keys [instructions next] :as current-state} state]
-    (if (contains? instructions next)
-      (recur (perform-operation (instructions next) current-state))
-      current-state)))
+  (
+   [stop? state]
+   (loop [{:keys [instructions next] :as current-state} state]
+     (if (and (not (stop? current-state)) (contains? instructions next))
+       (recur (perform-operation (instructions next) current-state))
+       current-state)))
+  ([state] (execute-instructions state (constantly false)))
+  )
