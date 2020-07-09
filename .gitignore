@@ -34,3 +34,5 @@ clj/pom.xml.asc
 /.nrepl-port
 .lein-failures
 .nrepl-port
+**/dist
+**/.parcel-cache

@@ -1,0 +1,17 @@
+{
+  "name": "parcel-browserslist",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "parcel": "^2.0.0-beta.1",
+    "typescript": "^3.9.6"
+  },
+  "scripts": {
+    "start": "parcel serve ./index.html"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
