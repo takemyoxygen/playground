@@ -36,3 +36,5 @@ clj/pom.xml.asc
 .nrepl-port
 **/dist
 **/.parcel-cache
+
+py/advent-of-code-2017/input
