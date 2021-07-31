@@ -6,7 +6,7 @@ namespace AdventOfCode2017.App
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(Day2.Solve2());
+            Console.WriteLine(Day3.Solve1());
         }
     }
 }
