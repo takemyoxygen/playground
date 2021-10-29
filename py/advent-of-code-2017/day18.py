@@ -1,8 +1,7 @@
 from collections import defaultdict, deque
-from typing import Union, List, Callable
-import operator
+from typing import List, Callable
 
-Operand = Union[str, int]
+from common.registers import Operand, eval_operand, Modification, Register, perform_jgz, handlers
 
 
 class State:
@@ -17,21 +16,6 @@ class State:
         self.sent_count = 0
 
 
-def eval_operand(operand: Operand, registers: dict[str, int]) -> int:
-    try:
-        return int(operand)
-    except ValueError:
-        return registers[operand]
-
-
-def modify_register(modification: Callable[[int, int], int]):
-    def apply_modification(state: State, register: str, value: Operand):
-        state.registers[register] = modification(state.registers[register], eval_operand(value, state.registers))
-        state.position += 1
-
-    return apply_modification
-
-
 def perform_sound(state: State, value: Operand):
     state.played_sound = eval_operand(value, state.registers)
     state.position += 1
@@ -41,13 +25,6 @@ def perform_recover(state: State, value: Operand):
     if eval_operand(value, state.registers) != 0:
         state.recovered_sound = state.played_sound
     state.position += 1
-
-
-def perform_jgz(state: State, condition: Operand, offset: Operand):
-    if eval_operand(condition, state.registers) > 0:
-        state.position += eval_operand(offset, state.registers)
-    else:
-        state.position += 1
 
 
 def perform_send(state: State, value: Operand):
@@ -62,18 +39,23 @@ def perform_receive(state: State, value: Operand):
         state.position += 1
 
 
-instruction_handlers_1 = {
-    'set': modify_register(lambda old, new: new),
-    'add': modify_register(operator.add),
-    'mul': modify_register(operator.mul),
-    'mod': modify_register(operator.mod),
-    'snd': perform_sound,
-    'rcv': perform_recover,
-    'jgz': perform_jgz
-}
+def wrap_in_state_modification(modification: Modification) -> Callable:
+    def wrapper(state: State, op1: Operand, op2: Operand):
+        state.position = modification(state.registers, state.position, op1, op2)
+
+    return wrapper
 
 
-instruction_handlers_2 = instruction_handlers_1.copy()
+base_handlers = handlers.copy()
+for key in base_handlers:
+    base_handlers[key] = wrap_in_state_modification(base_handlers[key])
+
+
+instruction_handlers_1 = base_handlers.copy()
+instruction_handlers_1['snd'] = perform_sound
+instruction_handlers_1['rcv'] = perform_recover
+
+instruction_handlers_2 = base_handlers.copy()
 instruction_handlers_2['snd'] = perform_send
 instruction_handlers_2['rcv'] = perform_receive
 
